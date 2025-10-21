@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swedish Flashcards</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container" x-data="flashcardApp()" x-init="loadCollections()">
+        <!-- Header -->
+        <div class="header">
+            <h1>Swedish Flashcards</h1>
+            <p>Master Swedish vocabulary with interactive flashcards</p>
+        </div>
+
+        <!-- Setup Section -->
+        <div x-show="!gameStarted" class="section">
+            <!-- Tabs -->
+            <div class="tabs">
+                <button @click="activeTab = 'start'" :class="{ active: activeTab === 'start' }" class="tab">
+                    Start Flashcards
+                </button>
+                <button @click="activeTab = 'create'" :class="{ active: activeTab === 'create' }" class="tab">
+                    Create Collection
+                </button>
+            </div>
+
+            <!-- Start Tab -->
+            <div x-show="activeTab === 'start'">
+                <!-- Collection Selector -->
+                <div class="card">
+                    <div class="input-group">
+                        <label>Select Collection</label>
+                        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                            <select x-model="selectedCollection" @change="loadCollection()" class="select"
+                                style="flex: 1; min-width: 250px;">
+                                <option value="">-- Select a collection --</option>
+                                <template x-for="name in Object.keys(collections)" :key="name">
+                                    <option :value="name" x-text="name"></option>
+                                </template>
+                            </select>
+                            <button @click="deleteCollection()" :disabled="!selectedCollection" class="btn btn-danger">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CSV Data -->
+                <div class="card">
+                    <div class="input-group">
+                        <label>CSV Data</label>
+                        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">
+                            Format: Swedish,English or Swedish;English (one pair per line)
+                        </p>
+                        <textarea x-model="csvData" class="textarea"
+                            placeholder="Paste your CSV data here or select a collection above..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Flashcard Type -->
+                <div class="card">
+                    <div class="input-group">
+                        <label>Choose Flashcard Type</label>
+                        <div class="radio-group">
+                            <div @click="flashcardType = 'flip'" :class="{ active: flashcardType === 'flip' }"
+                                class="radio-item">
+                                <div class="radio-dot"></div>
+                                <span>Flip Mode (press space to see answer, arrows to choose right or wrong)</span>
+                            </div>
+                            <div @click="flashcardType = 'typing'" :class="{ active: flashcardType === 'typing' }"
+                                class="radio-item">
+                                <div class="radio-dot"></div>
+                                <span>Typing Mode (type Swedish translation)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Length -->
+                <div class="card">
+                    <div class="input-group">
+                        <label>Session Length</label>
+                        <select x-model="sessionLength" class="select">
+                            <option value="10">10 cards</option>
+                            <option value="15">15 cards</option>
+                            <option value="20">20 cards</option>
+                            <option value="25">25 cards</option>
+                            <option value="30">30 cards</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Start Button -->
+                <div style="text-align: center;">
+                    <button @click="startFlashcards()" class="btn btn-primary"
+                        style="padding: 1rem 2rem; font-size: 1.1rem;">
+                        Start Flashcards
+                    </button>
+                </div>
+            </div>
+
+            <!-- Create Tab -->
+            <div x-show="activeTab === 'create'">
+                <div class="card">
+                    <div class="input-group">
+                        <label>Collection Name</label>
+                        <input type="text" x-model="newCollectionName" class="input"
+                            placeholder="Enter collection name...">
+                    </div>
+
+                    <div class="input-group">
+                        <label>CSV Data</label>
+                        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">
+                            Format: Swedish,English or Swedish;English (one pair per line)
+                        </p>
+                        <textarea x-model="newCollectionData" class="textarea"
+                            placeholder="Enter your CSV data here..."></textarea>
+                    </div>
+
+                    <button @click="saveCollection()" class="btn btn-success" style="width: 100%;">
+                        Save Collection
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Section -->
+        <div x-show="gameStarted && !sessionComplete" class="section">
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #667eea;" x-text="currentCards.length">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #764ba2;" x-text="Math.min(currentIndex + 1, currentCards.length)">0
+                    </div>
+                    <div class="stat-label">Current</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #10b981;" x-text="correctAnswers">0</div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #ef4444;" x-text="incorrectCards.length">0</div>
+                    <div class="stat-label">Errors</div>
+                </div>
+            </div>
+
+            <!-- Flashcard -->
+            <div class="flashcard" :class="{ flipped: isFlipped }" @click="flashcardType === 'flip' ? flipCard() : null">
+                <div class="flashcard-word" x-text="getCurrentCardWord()"></div>
+
+                <div x-show="isFlipped && flashcardType === 'flip'" class="flashcard-translation"
+                    x-text="getCurrentCardTranslation()"></div>
+
+                <div x-show="flashcardType === 'typing'">
+                    <input type="text" x-model="userAnswer"
+                        :class="answerClass"
+                        :disabled="isFlipped"
+                        @keydown.enter="!isFlipped ? checkAnswer() : null"
+                        x-ref="answerInput"
+                        class="answer-input"
+                        placeholder="Type the Swedish translation..." />
+                    <div x-html="feedbackMessage" class="feedback"></div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="buttons">
+                <button @click="checkAnswer()" x-show="flashcardType === 'typing' && !isFlipped" class="btn btn-primary">
+                    Check Answer
+                </button>
+                <button @click="flipCard()" x-show="flashcardType === 'flip' && !isFlipped" class="btn btn-primary">
+                    Show Answer
+                </button>
+                <button @click="markCorrect()" x-show="isFlipped" class="btn btn-success">
+                    ✓ Correct
+                </button>
+                <button @click="markIncorrect()" x-show="isFlipped" class="btn btn-danger">
+                    ✗ Incorrect
+                </button>
+            </div>
+
+            <div style="text-align: center; margin-top: 2rem;">
+                <button @click="resetSession()" class="btn btn-secondary">
+                    New Session
+                </button>
+            </div>
+        </div>
+
+        <!-- Session Complete -->
+        <div x-show="sessionComplete" class="section">
+            <div class="card session-complete">
+                <h2 class="session-title">🎉 Session Complete!</h2>
+                <p style="font-size: 1.2rem; color: #94a3b8; margin-bottom: 2rem;"
+                   x-text="`You got ${correctAnswers} out of ${currentCards.length} cards correct (${Math.round((correctAnswers / currentCards.length) * 100)}%)`">
+                </p>
+
+                <div x-show="incorrectCards.length > 0">
+                    <h3 style="margin-bottom: 1rem; color: #e2e8f0;">📚 Cards to review:</h3>
+                    <p style="color: #94a3b8; margin-bottom: 1rem;"><em>These are the cards you got wrong - review them to improve!</em>
+                    </p>
+                    <div class="review-cards">
+                        <template x-for="card in incorrectCards" :key="card.swedish + card.english">
+                            <div class="review-card">
+                                <strong x-text="card.swedish"></strong> → <em x-text="card.english"></em>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="buttons">
+                        <button @click="startReview()" class="btn btn-primary">
+                            🔄 Review Incorrect Cards
+                        </button>
+                        <button @click="resetSession()" class="btn btn-secondary">
+                            🆕 Start New Session
+                        </button>
+                    </div>
+                </div>
+
+                <div x-show="incorrectCards.length === 0">
+                    <h3 style="color: #10b981; margin-bottom: 1rem;">🎉 Perfect Score!</h3>
+                    <p style="color: #94a3b8; margin-bottom: 2rem;">You got all cards correct - no need to review!</p>
+                    <button @click="resetSession()" class="btn btn-success">
+                        🆕 Start New Session
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
