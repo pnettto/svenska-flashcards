@@ -40,7 +40,7 @@ function flashcardApp() {
             'vocab-food.csv',
             'vocab-travel.csv',
             'vocab-verbs.csv',
-            'weather-vocabulary.csv'
+            'vocab-weather.csv'
         ],
 
         // Methods
