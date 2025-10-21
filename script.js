@@ -74,9 +74,27 @@ function flashcardApp() {
         },
 
         async loadDefaultCollections() {
+            // Get the base path dynamically based on current location
+            const currentPath = window.location.pathname;
+            let basePath;
+            
+            if (window.location.hostname.includes('github.io')) {
+                // For GitHub Pages, extract the repo name from the path
+                const pathParts = currentPath.split('/').filter(part => part);
+                if (pathParts.length > 0) {
+                    // First part is the repo name on GitHub Pages
+                    basePath = `/${pathParts[0]}/flashcards/`;
+                } else {
+                    basePath = '/flashcards/';
+                }
+            } else {
+                // For local development or other hosting
+                basePath = './flashcards/';
+            }
+            
             for (const filename of this.defaultCollections) {
                 try {
-                    const response = await fetch(`/flashcards/${filename}`);
+                    const response = await fetch(`${basePath}${filename}`);
                     if (response.ok) {
                         const csvData = await response.text();
                         // Extract collection name from filename (remove .csv extension)
