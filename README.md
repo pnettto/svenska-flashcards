@@ -5,72 +5,38 @@ An interactive web application for learning Swedish vocabulary using flashcards 
 ## Features
 
 - **Two Learning Modes:**
-  - **Typing Mode**: Type the Swedish translation for English words
+  - **Typing Mode**: Type Swedish translations for English words
   - **Flip Mode**: Click or press spacebar to reveal translations
 
-- **Collection Management:**
-  - Create and save custom flashcard collections
-  - Load pre-made vocabulary collections
-  - Import CSV data in Swedish,English or Swedish;English format
+- **Collection Management:** Create custom collections or load CSV files
+- **Interactive Learning:** Configurable sessions (10-30 cards) with real-time statistics
+- **Modern UI:** Responsive design with dark theme and keyboard navigation
 
-- **Interactive Learning:**
-  - Configurable session length (10-30 cards)
-  - Real-time statistics tracking
-  - Review incorrect answers
-  - Keyboard shortcuts for efficient learning
+## Quick Start
 
-- **Modern UI:**
-  - Responsive design with dark theme
-  - Smooth animations and transitions
-  - Accessible interface with keyboard navigation
+1. Open `index.html` in your web browser
+2. Choose "Typing Mode" or "Flip Mode"
+3. Select session length (10-30 cards)
+4. Click "Start Flashcards" to begin
 
-## Getting Started
-
-### Prerequisites
-
-- A modern web browser
-- Local web server (optional, for CSV file loading)
-
-### Installation
-
-1. Clone or download the project files
-2. Place all files in a web-accessible directory
-3. Open `index.html` in your web browser
-
-### File Structure
+## File Structure
 
 ```
 flashcards/
-├── index.html          # Main application file
-├── styles.css          # All CSS styles
-├── script.js          # JavaScript functionality
-├── README.md          # This file
-└── [csv-files]/       # Optional CSV vocabulary files
+├── index.html          # Main application
+├── styles.css          # Styling
+├── script.js          # Functionality
+└── README.md          # Documentation
 ```
 
-## Usage
+## Creating Collections
 
-### Quick Start
-
-1. Open the application in your browser
-2. Choose between "Typing Mode" or "Flip Mode"
-3. Select session length (10-30 cards)
-4. Click "Start Flashcards" to begin learning
-
-### Creating Collections
-
-1. Click the "Create Collection" tab
-2. Enter a name for your collection
-3. Add CSV data in the format: `Swedish,English`
+1. Click "Create Collection" tab
+2. Enter collection name
+3. Add CSV data in format: `Swedish,English` or `Swedish;English`
 4. Click "Save Collection"
 
-### CSV Format
-
-The application accepts CSV data in two formats:
-- Comma-separated: `hej,hello`
-- Semicolon-separated: `hej;hello`
-
-Example:
+**Example CSV:**
 ```csv
 hej,hello
 hus,house
@@ -78,30 +44,64 @@ katt,cat
 bil,car
 ```
 
-### Keyboard Shortcuts
-
-During flashcard sessions:
-- **Space**: Show answer (Flip mode) or focus input (Typing mode)
-- **Enter**: Focus answer input (Typing mode)
-- **Right Arrow**: Mark as correct
-- **Left Arrow**: Mark as incorrect
-
 ## Learning Modes
 
-### Typing Mode
-- English word is displayed
-- Type the Swedish translation
-- Instant feedback on correctness
-- Automatic progression after answering
+**Typing Mode:**
+- See English word, type Swedish translation
+- Instant feedback and automatic progression
 
-### Flip Mode
-- Swedish word is displayed
-- Press spacebar or click to reveal English translation
-- Manually mark answers as correct or incorrect
-- Good for recognition practice
+**Flip Mode:**
+- See Swedish word, reveal English translation
+- Manually mark answers as correct/incorrect
+
+## Keyboard Shortcuts
+
+- **Space**: Show answer (Flip) or focus input (Typing)
+- **Enter**: Focus answer input (Typing mode)
+- **Right Arrow**: Mark correct
+- **Left Arrow**: Mark incorrect
 
 ## Local Development
 
+For CSV file support, use a local web server:
+
+```bash
+# Python 3
+python -m http.server 8000
+
+# Node.js
+npx http-server
+```
+
+Then navigate to `http://localhost:8000`
+
+## Browser Support
+
+Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+
+## Technologies
+
+- **Alpine.js** - Reactive framework
+- **CSS3** - Modern styling
+- **HTML5** - Semantic markup
+- **LocalStorage** - Data persistence
+
+## Tips
+
+1. Start with 10-15 cards per session
+2. Use review feature for incorrect answers
+3. Alternate between learning modes
+4. Practice daily for best results
+
+## Troubleshooting
+
+**Collections not saving?** Check browser localStorage permissions and console for errors.
+
+**CSV files not loading?** Use a local web server instead of opening HTML directly.
+
+## License
+
+MIT License - Open source and free to use.
 To run the application locally with CSV file support:
 
 1. Start a local web server:
