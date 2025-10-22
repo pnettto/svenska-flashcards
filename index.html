@@ -34,72 +34,74 @@
 
             <!-- Start Tab -->
             <div x-show="activeTab === 'start'">
-                <!-- Collection Selector -->
-                <div class="card">
-                    <div class="input-group">
-                        <label>Select Collection</label>
-                        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                            <select x-model="selectedCollection" @change="loadCollection()" class="select"
-                                style="flex: 1; min-width: 250px;">
-                                <option value="">-- Select a collection --</option>
-                                <template x-for="name in Object.keys(collections)" :key="name">
-                                    <option :value="name" x-text="name"></option>
-                                </template>
+                <div class="start-grid">
+                    <!-- Collection Selector -->
+                    <div class="card">
+                        <div class="input-group">
+                            <label>Select Collection</label>
+                            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                                <select x-model="selectedCollection" @change="loadCollection()" class="select"
+                                    style="flex: 1; min-width: 250px;">
+                                    <option value="">-- Select a collection --</option>
+                                    <template x-for="name in Object.keys(collections)" :key="name">
+                                        <option :value="name" x-text="name"></option>
+                                    </template>
+                                </select>
+                                <button @click="deleteCollection()" :disabled="!selectedCollection" class="btn btn-danger">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CSV Data -->
+                    <div class="card">
+                        <div class="input-group">
+                            <label>CSV Data</label>
+                            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">
+                                Format: Swedish,English or Swedish;English (one pair per line)
+                            </p>
+                            <textarea x-model="csvData" class="textarea"
+                                placeholder="Paste your CSV data here or select a collection above..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Flashcard Type -->
+                    <div class="card">
+                        <div class="input-group">
+                            <label>Choose Flashcard Type</label>
+                            <div class="radio-group">
+                                <div @click="flashcardType = 'flip'" :class="{ active: flashcardType === 'flip' }"
+                                    class="radio-item">
+                                    <div class="radio-dot"></div>
+                                    <span>Flip Mode (press space to see answer, arrows to choose right or wrong)</span>
+                                </div>
+                                <div @click="flashcardType = 'typing'" :class="{ active: flashcardType === 'typing' }"
+                                    class="radio-item">
+                                    <div class="radio-dot"></div>
+                                    <span>Typing Mode (type Swedish translation)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Session Length -->
+                    <div class="card">
+                        <div class="input-group">
+                            <label>Session Length</label>
+                            <select x-model="sessionLength" class="select">
+                                <option value="10">10 cards</option>
+                                <option value="15">15 cards</option>
+                                <option value="20">20 cards</option>
+                                <option value="25">25 cards</option>
+                                <option value="30">30 cards</option>
                             </select>
-                            <button @click="deleteCollection()" :disabled="!selectedCollection" class="btn btn-danger">
-                                Delete
-                            </button>
                         </div>
-                    </div>
-                </div>
-
-                <!-- CSV Data -->
-                <div class="card">
-                    <div class="input-group">
-                        <label>CSV Data</label>
-                        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">
-                            Format: Swedish,English or Swedish;English (one pair per line)
-                        </p>
-                        <textarea x-model="csvData" class="textarea"
-                            placeholder="Paste your CSV data here or select a collection above..."></textarea>
-                    </div>
-                </div>
-
-                <!-- Flashcard Type -->
-                <div class="card">
-                    <div class="input-group">
-                        <label>Choose Flashcard Type</label>
-                        <div class="radio-group">
-                            <div @click="flashcardType = 'flip'" :class="{ active: flashcardType === 'flip' }"
-                                class="radio-item">
-                                <div class="radio-dot"></div>
-                                <span>Flip Mode (press space to see answer, arrows to choose right or wrong)</span>
-                            </div>
-                            <div @click="flashcardType = 'typing'" :class="{ active: flashcardType === 'typing' }"
-                                class="radio-item">
-                                <div class="radio-dot"></div>
-                                <span>Typing Mode (type Swedish translation)</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Session Length -->
-                <div class="card">
-                    <div class="input-group">
-                        <label>Session Length</label>
-                        <select x-model="sessionLength" class="select">
-                            <option value="10">10 cards</option>
-                            <option value="15">15 cards</option>
-                            <option value="20">20 cards</option>
-                            <option value="25">25 cards</option>
-                            <option value="30">30 cards</option>
-                        </select>
                     </div>
                 </div>
 
                 <!-- Start Button -->
-                <div style="text-align: center;">
+                <div class="start-button-container">
                     <button @click="startFlashcards()" class="btn btn-primary"
                         style="padding: 1rem 2rem; font-size: 1.1rem;">
                         Start Flashcards
