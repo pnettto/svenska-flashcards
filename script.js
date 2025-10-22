@@ -36,7 +36,9 @@ function flashcardApp() {
 
         // Speech (optional Azure settings, stored locally)
         speechKey: '',
-        speechRegion: '',
+        speechRegion: 'swedencentral',
+        azureSynthesizer: null,
+
         // Keep a promise to avoid reloading the SDK
         azureSDKPromise: null,
 
@@ -244,10 +246,15 @@ function flashcardApp() {
             }
 
             // Load saved speech settings
-            const k = localStorage.getItem('speechKey');
-            const r = localStorage.getItem('speechRegion');
-            if (k) this.speechKey = k;
-            if (r) this.speechRegion = r;
+            const savedKey = localStorage.getItem('speechKey');
+            const savedRegion = localStorage.getItem('speechRegion');
+            if (savedKey) this.speechKey = savedKey;
+            if (savedRegion) this.speechRegion = savedRegion;
+            
+            // Initialize Azure Speech if credentials exist
+            if (this.speechKey && this.speechRegion) {
+                this.initializeAzureSpeech();
+            }
 
             // Load default collections from CSV files
             await this.loadDefaultCollections();
@@ -258,6 +265,24 @@ function flashcardApp() {
             // Preload Azure SDK if credentials already exist
             if (this.speechKey && this.speechRegion) {
                 await this.ensureAzureSDKLoaded();
+            }
+        },
+
+        initializeAzureSpeech() {
+            try {
+                if (!this.speechKey || !this.speechRegion) return;
+                
+                const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+                    this.speechKey,
+                    this.speechRegion
+                );
+                speechConfig.speechSynthesisVoiceName = 'sv-SE-SofieNeural';
+                
+                this.azureSynthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
+                console.log('Azure Speech SDK initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize Azure Speech:', error);
+                this.azureSynthesizer = null;
             }
         },
 
@@ -364,61 +389,61 @@ function flashcardApp() {
 
         // Speech helpers
         speechEnabled() {
-            // Enable if browser TTS is available OR Azure is configured and SDK loaded
-            const browserOK = 'speechSynthesis' in window;
-            const azureOK = !!(window.SpeechSDK && this.speechKey && this.speechRegion);
-            return browserOK || azureOK;
+            // Azure is enabled if we have a valid synthesizer
+            if (this.azureSynthesizer) return true;
+            // Otherwise, browser speech is available
+            return 'speechSynthesis' in window;
         },
 
         // Make credentials effective immediately and load SDK
         async saveSpeechSettings() {
-            localStorage.setItem('speechKey', this.speechKey || '');
-            localStorage.setItem('speechRegion', this.speechRegion || '');
+            localStorage.setItem('speechKey', this.speechKey);
+            localStorage.setItem('speechRegion', this.speechRegion);
+            
+            // Reinitialize Azure Speech with new credentials
+            this.initializeAzureSpeech();
+            
+            alert('Speech settings saved!');
+        },
 
-            if (this.speechKey && this.speechRegion) {
-                const ok = await this.ensureAzureSDKLoaded();
-                alert(ok ? 'Speech settings saved. Azure speech is ready.' : 'Speech settings saved. Could not load Azure SDK.');
+        speakCurrentSwedish() {
+            const card = this.currentCards[this.currentIndex];
+            if (!card) return;
+
+            const textToSpeak = card.swedish;
+
+            // Try Azure first if available
+            if (this.azureSynthesizer) {
+                this.azureSynthesizer.speakTextAsync(
+                    textToSpeak,
+                    result => {
+                        if (result.reason === SpeechSDK.ResultReason.SynthesizingAudioCompleted) {
+                            console.log('Azure TTS completed');
+                        } else {
+                            console.error('Azure TTS failed:', result.errorDetails);
+                            // Fall back to browser speech on error
+                            this.speakWithBrowser(textToSpeak);
+                        }
+                    },
+                    error => {
+                        console.error('Azure TTS error:', error);
+                        // Fall back to browser speech on error
+                        this.speakWithBrowser(textToSpeak);
+                    }
+                );
             } else {
-                alert('Speech settings saved.');
+                // Use browser speech as fallback
+                this.speakWithBrowser(textToSpeak);
             }
         },
 
         speakWithBrowser(text) {
-            if (!('speechSynthesis' in window) || !text) return false;
-            try {
-                const u = new SpeechSynthesisUtterance(text);
-                const voice = this.selectedSwedishVoice || this.pickSwedishVoice();
-                if (voice) u.voice = voice;
-                u.lang = 'sv-SE';
-                // Optional tuning
-                // u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
-                window.speechSynthesis.cancel(); // stop any ongoing speech
-                window.speechSynthesis.speak(u);
-                return true;
-            } catch (e) {
-                console.warn('Browser TTS error:', e);
-                return false;
-            }
-        },
-
-        speakWithAzure(text) {
-            if (!text || !(window.SpeechSDK && this.speechKey && this.speechRegion)) return false;
-            try {
-                const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(this.speechKey, this.speechRegion);
-                speechConfig.speechSynthesisLanguage = 'sv-SE';
-                speechConfig.speechSynthesisVoiceName = 'sv-SE-SofieNeural';
-                const synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
-                synthesizer.speakTextAsync(text,
-                    () => synthesizer.close(),
-                    (error) => {
-                        console.error('Speech synthesis error:', error);
-                        synthesizer.close();
-                    }
-                );
-                return true;
-            } catch (e) {
-                console.error('Azure TTS init error:', e);
-                return false;
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'sv-SE';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
             }
         },
 
@@ -441,12 +466,6 @@ function flashcardApp() {
         getCurrentCardSwedish() {
             if (this.currentIndex >= this.currentCards.length) return '';
             return this.currentCards[this.currentIndex].swedish;
-        },
-
-        speakCurrentSwedish() {
-            const text = this.getCurrentCardSwedish();
-            // No need to await; speech will start when ready
-            this.speakText(text);
         },
 
         // Add: lazy loader for Azure Speech SDK

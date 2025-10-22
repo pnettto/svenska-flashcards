@@ -51,7 +51,8 @@
                                         <option :value="name" x-text="name"></option>
                                     </template>
                                 </select>
-                                <button @click="deleteCollection()" :disabled="!selectedCollection" class="btn btn-danger">
+                                <button @click="deleteCollection()" :disabled="!selectedCollection"
+                                    class="btn btn-danger">
                                     Delete
                                 </button>
                             </div>
@@ -132,13 +133,8 @@
                 <div x-show="selectedCollection && flashcards.length > 0" class="table-container">
                     <!-- Search -->
                     <div class="table-search">
-                        <input 
-                            type="text" 
-                            x-model="searchQuery" 
-                            @input="filterCards()"
-                            class="search-input" 
-                            placeholder="Search Swedish or English phrases..."
-                        />
+                        <input type="text" x-model="searchQuery" @input="filterCards()" class="search-input"
+                            placeholder="Search Swedish or English phrases..." />
                     </div>
 
                     <!-- Table -->
@@ -163,7 +159,7 @@
                                 </template>
                             </tbody>
                         </table>
-                        
+
                         <!-- No Results -->
                         <div x-show="filteredCards.length === 0 && searchQuery.trim()" class="no-results">
                             No cards found matching "<span x-text="searchQuery"></span>"
@@ -176,7 +172,8 @@
                             Showing <strong x-text="flashcards.length"></strong> cards
                         </span>
                         <span x-show="searchQuery.trim()">
-                            Showing <strong x-text="filteredCards.length"></strong> of <strong x-text="flashcards.length"></strong> cards
+                            Showing <strong x-text="filteredCards.length"></strong> of <strong
+                                x-text="flashcards.length"></strong> cards
                         </span>
                     </div>
                 </div>
@@ -184,7 +181,8 @@
                 <!-- Empty State -->
                 <div x-show="!selectedCollection" class="card" style="text-align: center; padding: 3rem;">
                     <h3 style="color: #a0a0a0; margin-bottom: 1rem;">📚 Select a Collection</h3>
-                    <p style="color: #666;">Choose a collection from the dropdown above to view its contents in a table format.</p>
+                    <p style="color: #666;">Choose a collection from the dropdown above to view its contents in a table
+                        format.</p>
                 </div>
             </div>
 
@@ -217,16 +215,22 @@
                 <div class="card">
                     <div class="input-group">
                         <label>Speech (Azure Cognitive Services)</label>
-                        <input type="password" x-model="speechKey" class="input" placeholder="Speech key (stored locally)" />
+                        <input type="password" x-model="speechKey" class="input"
+                            placeholder="Speech key (stored locally)" />
                     </div>
                     <div class="input-group">
-                        <input type="text" x-model="speechRegion" class="input" placeholder="Region, e.g., swedencentral" value="swedencentral" />
+                        <div x-data="{ speechRegion: 'swedencentral' }">
+                            <input type="text" x-model="speechRegion" class="input"
+                                placeholder="Region, e.g., swedencentral" />
+                        </div>
                     </div>
-                    <button @click="saveSpeechSettings()" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;">
+                    <button @click="saveSpeechSettings()" class="btn btn-secondary"
+                        style="width: 100%; margin-top: 0.5rem;">
                         Save Speech Settings
                     </button>
                     <p style="color:#94a3b8; font-size:0.85rem; margin-top:0.75rem;">
-                        Uses your browser's built‑in voice by default. Optionally configure Azure to use sv‑SE‑SofieNeural.
+                        Uses your browser's built‑in voice by default. Optionally configure Azure to use
+                        sv‑SE‑SofieNeural.
                     </p>
                 </div>
             </div>
@@ -241,7 +245,8 @@
                     <div class="stat-label">Total</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" style="color: #764ba2;" x-text="Math.min(currentIndex + 1, currentCards.length)">0
+                    <div class="stat-number" style="color: #764ba2;"
+                        x-text="Math.min(currentIndex + 1, currentCards.length)">0
                     </div>
                     <div class="stat-label">Current</div>
                 </div>
@@ -256,10 +261,11 @@
             </div>
 
             <!-- Flashcard -->
-            <div class="flashcard" :class="{ flipped: isFlipped }" @click="flashcardType === 'flip' ? flipCard() : null">
+            <div class="flashcard" :class="{ flipped: isFlipped }"
+                @click="flashcardType === 'flip' ? flipCard() : null">
                 <div style="margin-bottom: 0.75rem;">
                     <button @click.stop="speakCurrentSwedish()" :disabled="!speechEnabled()" class="btn btn-secondary">
-                        🔈 Listen
+                        🔈
                     </button>
                 </div>
 
@@ -270,12 +276,8 @@
                     x-text="getCurrentCardTranslation()"></div>
 
                 <div x-show="flashcardType === 'typing'">
-                    <input type="text" x-model="userAnswer"
-                        :class="answerClass"
-                        :disabled="isFlipped"
-                        @keydown.enter="!isFlipped ? checkAnswer() : null"
-                        x-ref="answerInput"
-                        class="answer-input"
+                    <input type="text" x-model="userAnswer" :class="answerClass" :disabled="isFlipped"
+                        @keydown.enter="!isFlipped ? checkAnswer() : null" x-ref="answerInput" class="answer-input"
                         placeholder="Type the Swedish translation..." />
                     <div x-html="feedbackMessage" class="feedback"></div>
                 </div>
@@ -283,7 +285,8 @@
 
             <!-- Buttons -->
             <div class="buttons">
-                <button @click="checkAnswer()" x-show="flashcardType === 'typing' && !isFlipped" class="btn btn-primary">
+                <button @click="checkAnswer()" x-show="flashcardType === 'typing' && !isFlipped"
+                    class="btn btn-primary">
                     Check Answer
                 </button>
                 <button @click="flipCard()" x-show="flashcardType === 'flip' && !isFlipped" class="btn btn-primary">
@@ -309,12 +312,13 @@
             <div class="card session-complete">
                 <h2 class="session-title">🎉 Session Complete!</h2>
                 <p style="font-size: 1.2rem; color: #94a3b8; margin-bottom: 2rem;"
-                   x-text="`You got ${correctAnswers} out of ${currentCards.length} cards correct (${Math.round((correctAnswers / currentCards.length) * 100)}%)`">
+                    x-text="`You got ${correctAnswers} out of ${currentCards.length} cards correct (${Math.round((correctAnswers / currentCards.length) * 100)}%)`">
                 </p>
 
                 <div x-show="incorrectCards.length > 0">
                     <h3 style="margin-bottom: 1rem; color: #e2e8f0;">📚 Cards to review:</h3>
-                    <p style="color: #94a3b8; margin-bottom: 1rem;"><em>These are the cards you got wrong - review them to improve!</em>
+                    <p style="color: #94a3b8; margin-bottom: 1rem;"><em>These are the cards you got wrong - review them
+                            to improve!</em>
                     </p>
                     <div class="review-cards">
                         <template x-for="card in incorrectCards" :key="card.swedish + card.english">
