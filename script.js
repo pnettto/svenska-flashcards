@@ -32,15 +32,15 @@ function flashcardApp() {
 
         // Default collections to load from CSV files
         defaultCollections: [
-            'phrases-expats.csv',
-            'phrases-idioms.csv',
-            'phrases-proverbs.csv',
-            'phrases-urban.csv',
-            'vocab-emotions.csv',
-            'vocab-food.csv',
-            'vocab-travel.csv',
-            'vocab-verbs.csv',
-            'vocab-weather.csv'
+            'expressions-expats.csv',
+            'expressions-urban.csv',
+            'idioms.csv',
+            'proverbs.csv',
+            'vocabulary-emotions.csv',
+            'vocabulary-food.csv',
+            'vocabulary-travel.csv',
+            'vocabulary-verbs.csv',
+            'vocabulary-weather.csv',
         ],
 
         // Methods
