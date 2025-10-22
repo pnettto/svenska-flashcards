@@ -493,6 +493,44 @@ function flashcardApp() {
 
             return this.azureSDKPromise;
         },
+
+        // Touch handling for swipe gestures
+        touchStartX: 0,
+        touchStartY: 0,
+        
+        onTouchStart(event) {
+            if (this.flashcardType !== 'flip' || !this.isFlipped) {
+                return;
+            }
+            this.touchStartX = event.touches[0].clientX;
+            this.touchStartY = event.touches[0].clientY;
+        },
+        
+        onTouchEnd(event) {
+            if (this.flashcardType !== 'flip' || !this.isFlipped) {
+                return;
+            }
+            
+            const touchEndX = event.changedTouches[0].clientX;
+            const touchEndY = event.changedTouches[0].clientY;
+            
+            const deltaX = touchEndX - this.touchStartX;
+            const deltaY = touchEndY - this.touchStartY;
+            
+            // Minimum swipe distance (50px)
+            const minSwipeDistance = 50;
+            
+            // Check if horizontal swipe is dominant
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
+                if (deltaX > 0) {
+                    // Swipe right - correct
+                    this.markCorrect();
+                } else {
+                    // Swipe left - incorrect
+                    this.markIncorrect();
+                }
+            }
+        },
     }
 }
 
