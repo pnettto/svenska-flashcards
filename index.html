@@ -31,6 +31,9 @@
                 <button @click="activeTab = 'create'" :class="{ active: activeTab === 'create' }" class="tab">
                     Create set
                 </button>
+                <button @click="activeTab = 'config'" :class="{ active: activeTab === 'config' }" class="tab">
+                    Config
+                </button>
             </div>
 
             <!-- Start Tab -->
@@ -98,23 +101,6 @@
                                 <option value="30">30 cards</option>
                             </select>
                         </div>
-                    </div>
-
-                    <!-- Speech Settings (optional) -->
-                    <div class="card">
-                        <div class="input-group">
-                            <label>Speech (Azure Cognitive Services)</label>
-                            <input type="password" x-model="speechKey" class="input" placeholder="Speech key (stored locally)" />
-                        </div>
-                        <div class="input-group">
-                            <input type="text" x-model="speechRegion" class="input" placeholder="Region, e.g., swedencentral" />
-                        </div>
-                        <button @click="saveSpeechSettings()" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;">
-                            Save Speech Settings
-                        </button>
-                        <p style="color:#94a3b8; font-size:0.85rem; margin-top:0.75rem;">
-                            Uses your browser's built‑in voice by default. Optionally configure Azure to use sv‑SE‑SofieNeural.
-                        </p>
                     </div>
                 </div>
 
@@ -223,6 +209,25 @@
                     <button @click="saveCollection()" class="btn btn-success" style="width: 100%;">
                         Save Collection
                     </button>
+                </div>
+            </div>
+
+            <!-- Config Tab -->
+            <div x-show="activeTab === 'config'">
+                <div class="card">
+                    <div class="input-group">
+                        <label>Speech (Azure Cognitive Services)</label>
+                        <input type="password" x-model="speechKey" class="input" placeholder="Speech key (stored locally)" />
+                    </div>
+                    <div class="input-group">
+                        <input type="text" x-model="speechRegion" class="input" placeholder="Region, e.g., swedencentral" />
+                    </div>
+                    <button @click="saveSpeechSettings()" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;">
+                        Save Speech Settings
+                    </button>
+                    <p style="color:#94a3b8; font-size:0.85rem; margin-top:0.75rem;">
+                        Uses your browser's built‑in voice by default. Optionally configure Azure to use sv‑SE‑SofieNeural.
+                    </p>
                 </div>
             </div>
         </div>
