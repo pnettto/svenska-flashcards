@@ -497,6 +497,7 @@ function flashcardApp() {
         // Touch handling for swipe gestures
         touchStartX: 0,
         touchStartY: 0,
+        touchMoved: false,
         
         onTouchStart(event) {
             if (this.flashcardType !== 'flip' || !this.isFlipped) {
@@ -504,6 +505,7 @@ function flashcardApp() {
             }
             this.touchStartX = event.touches[0].clientX;
             this.touchStartY = event.touches[0].clientY;
+            this.touchMoved = false;
         },
         
         onTouchEnd(event) {
@@ -522,6 +524,10 @@ function flashcardApp() {
             
             // Check if horizontal swipe is dominant
             if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
+                event.preventDefault();
+                event.stopPropagation();
+                this.touchMoved = true;
+                
                 if (deltaX > 0) {
                     // Swipe right - correct
                     this.markCorrect();
