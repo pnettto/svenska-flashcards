@@ -34,6 +34,14 @@ function flashcardApp() {
         searchQuery: '',
         filteredCards: [],
 
+        // Speech (optional Azure settings, stored locally)
+        speechKey: '',
+        speechRegion: '',
+
+        // Browser TTS state
+        browserVoices: [],
+        selectedSwedishVoice: null,
+
         // Default collections to load from CSV files
         defaultCollections: [
             'expressions-expats.csv',
@@ -227,13 +235,44 @@ function flashcardApp() {
 
         // Collection Management
         async loadCollections() {
+            // Load saved collections from localStorage
             const stored = localStorage.getItem('flashcardCollections');
             if (stored) {
                 this.collections = JSON.parse(stored);
             }
-            
+
+            // Load saved speech settings
+            const k = localStorage.getItem('speechKey');
+            const r = localStorage.getItem('speechRegion');
+            if (k) this.speechKey = k;
+            if (r) this.speechRegion = r;
+
             // Load default collections from CSV files
             await this.loadDefaultCollections();
+
+            // Init browser voices
+            this.initVoices();
+        },
+
+        initVoices() {
+            if (!('speechSynthesis' in window)) return;
+            const load = () => {
+                this.browserVoices = window.speechSynthesis.getVoices() || [];
+                this.selectedSwedishVoice = this.pickSwedishVoice();
+            };
+            load();
+            // Some browsers load voices asynchronously
+            if (typeof window.speechSynthesis.onvoiceschanged !== 'undefined') {
+                window.speechSynthesis.onvoiceschanged = load;
+            }
+        },
+
+        pickSwedishVoice() {
+            if (!this.browserVoices.length) return null;
+            const sv = this.browserVoices.filter(v => (v.lang || '').toLowerCase().startsWith('sv'));
+            if (!sv.length) return null;
+            // Prefer voices that look like sv-SE or named Sofie if available
+            return sv.find(v => /sv[-_]se/i.test(v.lang) || /sofie/i.test(v.name)) || sv[0];
         },
 
         loadCollection() {
@@ -314,6 +353,337 @@ function flashcardApp() {
                 this.filteredCards = [...this.flashcards];
                 this.searchQuery = '';
             }
+        },
+
+        // Speech helpers
+        speechEnabled() {
+            // Enable if browser TTS is available OR Azure is configured and SDK loaded
+            const browserOK = 'speechSynthesis' in window;
+            const azureOK = !!(window.SpeechSDK && this.speechKey && this.speechRegion);
+            return browserOK || azureOK;
+        },
+
+        saveSpeechSettings() {
+            localStorage.setItem('speechKey', this.speechKey || '');
+            localStorage.setItem('speechRegion', this.speechRegion || '');
+            alert('Speech settings saved.');
+        },
+
+        speakWithBrowser(text) {
+            if (!('speechSynthesis' in window) || !text) return false;
+            try {
+                const u = new SpeechSynthesisUtterance(text);
+                const voice = this.selectedSwedishVoice || this.pickSwedishVoice();
+                if (voice) u.voice = voice;
+                u.lang = 'sv-SE';
+                // Optional tuning
+                // u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
+                window.speechSynthesis.cancel(); // stop any ongoing speech
+                window.speechSynthesis.speak(u);
+                return true;
+            } catch (e) {
+                console.warn('Browser TTS error:', e);
+                return false;
+            }
+        },
+
+        speakWithAzure(text) {
+            if (!text || !(window.SpeechSDK && this.speechKey && this.speechRegion)) return false;
+            try {
+                const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(this.speechKey, this.speechRegion);
+                speechConfig.speechSynthesisLanguage = 'sv-SE';
+                speechConfig.speechSynthesisVoiceName = 'sv-SE-SofieNeural';
+                const synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
+                synthesizer.speakTextAsync(text,
+                    () => synthesizer.close(),
+                    (error) => {
+                        console.error('Speech synthesis error:', error);
+                        synthesizer.close();
+                    }
+                );
+                return true;
+            } catch (e) {
+                console.error('Azure TTS init error:', e);
+                return false;
+            }
+        },
+
+        speakText(text) {
+            // Prefer browser TTS
+            if (this.speakWithBrowser(text)) return;
+            // Fallback to Azure if configured
+            if (this.speakWithAzure(text)) return;
+            alert('No speech engine available. Enable browser TTS or configure Azure.');
+        },
+
+        getCurrentCardSwedish() {
+            if (this.currentIndex >= this.currentCards.length) return '';
+            return this.currentCards[this.currentIndex].swedish;
+        },
+
+        speakCurrentSwedish() {
+            const text = this.getCurrentCardSwedish();
+            this.speakText(text);
+        },
+
+        // Game logic
+        getCurrentCardWord() {
+            if (this.currentIndex >= this.currentCards.length) return '';
+            const card = this.currentCards[this.currentIndex];
+            return this.flashcardType === 'typing' ? card.english : card.swedish;
+        },
+
+        getCurrentCardTranslation() {
+            if (this.currentIndex >= this.currentCards.length) return '';
+            const card = this.currentCards[this.currentIndex];
+            return this.flashcardType === 'typing' ? card.swedish : card.english;
+        },
+
+        flipCard() {
+            if (this.flashcardType !== 'flip' || this.isFlipped) return;
+            this.isFlipped = true;
+        },
+
+        checkAnswer() {
+            if (this.flashcardType !== 'typing' || this.isFlipped) return;
+
+            const userAnswer = this.userAnswer.trim().toLowerCase();
+            const correctAnswer = this.currentCards[this.currentIndex].swedish.toLowerCase();
+
+            this.isFlipped = true;
+
+            if (correctAnswer.includes(userAnswer) && userAnswer.length > 0) {
+                this.answerClass = 'correct';
+                this.feedbackMessage = '<div class="correct-answer">✓ Correct!</div>';
+            } else {
+                this.answerClass = 'incorrect';
+                this.feedbackMessage = `<div class="incorrect-answer">✗ Incorrect<br>Correct answer: <strong>${this.currentCards[this.currentIndex].swedish}</strong></div>`;
+            }
+        },
+
+        markCorrect() {
+            this.correctAnswers++;
+            this.nextCard();
+        },
+
+        markIncorrect() {
+            this.incorrectCards.push(this.currentCards[this.currentIndex]);
+            this.nextCard();
+        },
+
+        nextCard() {
+            this.currentIndex++;
+            this.showCurrentCard();
+        },
+
+        startReview() {
+            this.currentCards = this.shuffleArray(this.incorrectCards);
+            this.currentIndex = 0;
+            this.correctAnswers = 0;
+            const previousErrors = [...this.incorrectCards];
+            this.incorrectCards = [];
+            this.isReviewMode = true;
+            this.sessionComplete = false;
+
+            this.showCurrentCard();
+        },
+
+        resetSession() {
+            this.gameStarted = false;
+            this.sessionComplete = false;
+        },
+
+        // Collection Management
+        async loadCollections() {
+            // Load saved collections from localStorage
+            const stored = localStorage.getItem('flashcardCollections');
+            if (stored) {
+                this.collections = JSON.parse(stored);
+            }
+
+            // Load saved speech settings
+            const k = localStorage.getItem('speechKey');
+            const r = localStorage.getItem('speechRegion');
+            if (k) this.speechKey = k;
+            if (r) this.speechRegion = r;
+
+            // Load default collections from CSV files
+            await this.loadDefaultCollections();
+
+            // Init browser voices
+            this.initVoices();
+        },
+
+        initVoices() {
+            if (!('speechSynthesis' in window)) return;
+            const load = () => {
+                this.browserVoices = window.speechSynthesis.getVoices() || [];
+                this.selectedSwedishVoice = this.pickSwedishVoice();
+            };
+            load();
+            // Some browsers load voices asynchronously
+            if (typeof window.speechSynthesis.onvoiceschanged !== 'undefined') {
+                window.speechSynthesis.onvoiceschanged = load;
+            }
+        },
+
+        pickSwedishVoice() {
+            if (!this.browserVoices.length) return null;
+            const sv = this.browserVoices.filter(v => (v.lang || '').toLowerCase().startsWith('sv'));
+            if (!sv.length) return null;
+            // Prefer voices that look like sv-SE or named Sofie if available
+            return sv.find(v => /sv[-_]se/i.test(v.lang) || /sofie/i.test(v.name)) || sv[0];
+        },
+
+        loadCollection() {
+            if (this.selectedCollection && this.collections[this.selectedCollection]) {
+                this.csvData = this.collections[this.selectedCollection];
+            }
+        },
+
+        saveCollection() {
+            const name = this.newCollectionName.trim();
+            const csvData = this.newCollectionData.trim();
+
+            if (!name) {
+                alert('Please enter a collection name');
+                return;
+            }
+
+            if (!csvData) {
+                alert('Please enter CSV data');
+                return;
+            }
+
+            const flashcards = this.parseCSV(csvData);
+            if (flashcards.length === 0) {
+                alert('Please enter valid CSV data');
+                return;
+            }
+
+            this.collections[name] = csvData;
+            localStorage.setItem('flashcardCollections', JSON.stringify(this.collections));
+
+            this.newCollectionName = '';
+            this.newCollectionData = '';
+
+            this.activeTab = 'start';
+            this.selectedCollection = name;
+            this.csvData = csvData;
+
+            alert(`Collection "${name}" saved successfully!`);
+        },
+
+        deleteCollection() {
+            if (!this.selectedCollection) {
+                alert('Please select a collection to delete');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to delete the collection "${this.selectedCollection}"?`)) {
+                delete this.collections[this.selectedCollection];
+                localStorage.setItem('flashcardCollections', JSON.stringify(this.collections));
+
+                this.csvData = '';
+                this.selectedCollection = '';
+
+                alert(`Collection deleted successfully!`);
+            }
+        },
+
+        // Add new method for filtering cards
+        filterCards() {
+            if (!this.searchQuery.trim()) {
+                this.filteredCards = [...this.flashcards];
+                return;
+            }
+
+            const query = this.searchQuery.toLowerCase().trim();
+            this.filteredCards = this.flashcards.filter(card => 
+                card.swedish.toLowerCase().includes(query) || 
+                card.english.toLowerCase().includes(query)
+            );
+        },
+
+        // Add method to load collection for table view
+        loadCollectionForTable() {
+            if (this.selectedCollection && this.collections[this.selectedCollection]) {
+                this.csvData = this.collections[this.selectedCollection];
+                this.flashcards = this.parseCSV(this.csvData);
+                this.filteredCards = [...this.flashcards];
+                this.searchQuery = '';
+            }
+        },
+
+        // Speech helpers
+        speechEnabled() {
+            // Enable if browser TTS is available OR Azure is configured and SDK loaded
+            const browserOK = 'speechSynthesis' in window;
+            const azureOK = !!(window.SpeechSDK && this.speechKey && this.speechRegion);
+            return browserOK || azureOK;
+        },
+
+        saveSpeechSettings() {
+            localStorage.setItem('speechKey', this.speechKey || '');
+            localStorage.setItem('speechRegion', this.speechRegion || '');
+            alert('Speech settings saved.');
+        },
+
+        speakWithBrowser(text) {
+            if (!('speechSynthesis' in window) || !text) return false;
+            try {
+                const u = new SpeechSynthesisUtterance(text);
+                const voice = this.selectedSwedishVoice || this.pickSwedishVoice();
+                if (voice) u.voice = voice;
+                u.lang = 'sv-SE';
+                // Optional tuning
+                // u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
+                window.speechSynthesis.cancel(); // stop any ongoing speech
+                window.speechSynthesis.speak(u);
+                return true;
+            } catch (e) {
+                console.warn('Browser TTS error:', e);
+                return false;
+            }
+        },
+
+        speakWithAzure(text) {
+            if (!text || !(window.SpeechSDK && this.speechKey && this.speechRegion)) return false;
+            try {
+                const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(this.speechKey, this.speechRegion);
+                speechConfig.speechSynthesisLanguage = 'sv-SE';
+                speechConfig.speechSynthesisVoiceName = 'sv-SE-SofieNeural';
+                const synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
+                synthesizer.speakTextAsync(text,
+                    () => synthesizer.close(),
+                    (error) => {
+                        console.error('Speech synthesis error:', error);
+                        synthesizer.close();
+                    }
+                );
+                return true;
+            } catch (e) {
+                console.error('Azure TTS init error:', e);
+                return false;
+            }
+        },
+
+        speakText(text) {
+            // Prefer browser TTS
+            if (this.speakWithBrowser(text)) return;
+            // Fallback to Azure if configured
+            if (this.speakWithAzure(text)) return;
+            alert('No speech engine available. Enable browser TTS or configure Azure.');
+        },
+
+        getCurrentCardSwedish() {
+            if (this.currentIndex >= this.currentCards.length) return '';
+            return this.currentCards[this.currentIndex].swedish;
+        },
+
+        speakCurrentSwedish() {
+            const text = this.getCurrentCardSwedish();
+            this.speakText(text);
         },
     }
 }

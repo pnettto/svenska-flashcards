@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Swedish Flashcards</title>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -97,6 +98,23 @@
                                 <option value="30">30 cards</option>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- Speech Settings (optional) -->
+                    <div class="card">
+                        <div class="input-group">
+                            <label>Speech (Azure Cognitive Services)</label>
+                            <input type="password" x-model="speechKey" class="input" placeholder="Speech key (stored locally)" />
+                        </div>
+                        <div class="input-group">
+                            <input type="text" x-model="speechRegion" class="input" placeholder="Region, e.g., swedencentral" />
+                        </div>
+                        <button @click="saveSpeechSettings()" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;">
+                            Save Speech Settings
+                        </button>
+                        <p style="color:#94a3b8; font-size:0.85rem; margin-top:0.75rem;">
+                            Uses your browser's built‑in voice by default. Optionally configure Azure to use sv‑SE‑SofieNeural.
+                        </p>
                     </div>
                 </div>
 
@@ -234,6 +252,13 @@
 
             <!-- Flashcard -->
             <div class="flashcard" :class="{ flipped: isFlipped }" @click="flashcardType === 'flip' ? flipCard() : null">
+                <div style="margin-bottom: 0.75rem;">
+                    <button @click.stop="speakCurrentSwedish()" :disabled="!speechEnabled()" class="btn btn-secondary">
+                        🔈 Listen
+                    </button>
+                </div>
+
+                <!-- Call the method instead of binding the function -->
                 <div class="flashcard-word" x-text="getCurrentCardWord()"></div>
 
                 <div x-show="isFlipped && flashcardType === 'flip'" class="flashcard-translation"
