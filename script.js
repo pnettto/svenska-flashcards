@@ -493,49 +493,49 @@ function flashcardApp() {
 
             return this.azureSDKPromise;
         },
+    }
+}
 
-        // Touch handling for swipe gestures
-        touchStartX: 0,
-        touchStartY: 0,
-        touchMoved: false,
-        
-        onTouchStart(event) {
-            if (this.flashcardType !== 'flip' || !this.isFlipped) {
-                return;
+// Keyboard shortcuts
+document.addEventListener('keydown', function (e) {
+    const app = Alpine.$data(document.querySelector('[x-data]'));
+    if (!app || !app.gameStarted || app.sessionComplete) return;
+
+    if (document.activeElement.tagName === 'INPUT') {
+        return; // Let Alpine handle Enter key in input
+    }
+
+    switch (e.key) {
+        case ' ':
+            e.preventDefault();
+            if (app.flashcardType === 'flip' && !app.isFlipped) {
+                app.flipCard();
+            } else if (app.flashcardType === 'typing' && !app.isFlipped) {
+                const input = document.querySelector('[x-ref="answerInput"]');
+                if (input) input.focus();
             }
-            this.touchStartX = event.touches[0].clientX;
-            this.touchStartY = event.touches[0].clientY;
-            this.touchMoved = false;
-        },
-        
-        onTouchEnd(event) {
-            if (this.flashcardType !== 'flip' || !this.isFlipped) {
-                return;
+            break;
+        case 'Enter':
+            e.preventDefault();
+            if (app.flashcardType === 'typing' && !app.isFlipped) {
+                const input = document.querySelector('[x-ref="answerInput"]');
+                if (input) input.focus();
             }
-            
-            const touchEndX = event.changedTouches[0].clientX;
-            const touchEndY = event.changedTouches[0].clientY;
-            
-            const deltaX = touchEndX - this.touchStartX;
-            const deltaY = touchEndY - this.touchStartY;
-            
-            // Minimum swipe distance (50px)
-            const minSwipeDistance = 50;
-            
-            // Check if horizontal swipe is dominant
-            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
-                event.preventDefault();
-                event.stopPropagation();
-                this.touchMoved = true;
-                
-                if (deltaX > 0) {
-                    // Swipe right - correct
-                    this.markCorrect();
-                } else {
-                    // Swipe left - incorrect
-                    this.markIncorrect();
-                }
+            break;
+        case 'ArrowRight':
+            e.preventDefault();
+            if (app.isFlipped) {
+                app.markCorrect();
             }
+            break;
+        case 'ArrowLeft':
+            e.preventDefault();
+            if (app.isFlipped) {
+                app.markIncorrect();
+            }
+            break;
+    }
+});
         },
     }
 }

@@ -262,10 +262,7 @@
 
             <!-- Flashcard -->
             <div class="flashcard" :class="{ flipped: isFlipped }"
-                @click="if (flashcardType === 'flip' && !touchMoved) flipCard()"
-                @touchstart="onTouchStart($event)"
-                @touchend="onTouchEnd($event)"
-                @touchmove="touchMoved = true">
+                @click="flashcardType === 'flip' ? flipCard() : null">
                 <div style="margin-bottom: 0.75rem;">
                     <button @click.stop="speakCurrentSwedish()" :disabled="!speechEnabled()" class="btn btn-secondary">
                         🔈
