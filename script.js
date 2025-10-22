@@ -30,6 +30,10 @@ function flashcardApp() {
         answerClass: '',
         feedbackMessage: '',
 
+        // Table view
+        searchQuery: '',
+        filteredCards: [],
+
         // Default collections to load from CSV files
         defaultCollections: [
             'expressions-expats.csv',
@@ -286,7 +290,31 @@ function flashcardApp() {
 
                 alert(`Collection deleted successfully!`);
             }
-        }
+        },
+
+        // Add new method for filtering cards
+        filterCards() {
+            if (!this.searchQuery.trim()) {
+                this.filteredCards = [...this.flashcards];
+                return;
+            }
+
+            const query = this.searchQuery.toLowerCase().trim();
+            this.filteredCards = this.flashcards.filter(card => 
+                card.swedish.toLowerCase().includes(query) || 
+                card.english.toLowerCase().includes(query)
+            );
+        },
+
+        // Add method to load collection for table view
+        loadCollectionForTable() {
+            if (this.selectedCollection && this.collections[this.selectedCollection]) {
+                this.csvData = this.collections[this.selectedCollection];
+                this.flashcards = this.parseCSV(this.csvData);
+                this.filteredCards = [...this.flashcards];
+                this.searchQuery = '';
+            }
+        },
     }
 }
 

@@ -24,6 +24,9 @@
                 <button @click="activeTab = 'start'" :class="{ active: activeTab === 'start' }" class="tab">
                     Start Flashcards
                 </button>
+                <button @click="activeTab = 'view'" :class="{ active: activeTab === 'view' }" class="tab">
+                    View Collection
+                </button>
                 <button @click="activeTab = 'create'" :class="{ active: activeTab === 'create' }" class="tab">
                     Create Collection
                 </button>
@@ -101,6 +104,81 @@
                         style="padding: 1rem 2rem; font-size: 1.1rem;">
                         Start Flashcards
                     </button>
+                </div>
+            </div>
+
+            <!-- View Collection Tab -->
+            <div x-show="activeTab === 'view'">
+                <!-- Collection Selector -->
+                <div class="card">
+                    <div class="input-group">
+                        <label>Select Collection to View</label>
+                        <select x-model="selectedCollection" @change="loadCollectionForTable()" class="select">
+                            <option value="">-- Select a collection --</option>
+                            <template x-for="name in Object.keys(collections)" :key="name">
+                                <option :value="name" x-text="name"></option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Table View -->
+                <div x-show="selectedCollection && flashcards.length > 0" class="table-container">
+                    <!-- Search -->
+                    <div class="table-search">
+                        <input 
+                            type="text" 
+                            x-model="searchQuery" 
+                            @input="filterCards()"
+                            class="search-input" 
+                            placeholder="Search Swedish or English phrases..."
+                        />
+                    </div>
+
+                    <!-- Table -->
+                    <div style="overflow-x: auto;">
+                        <table class="flashcard-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 45%;">Swedish</th>
+                                    <th style="width: 55%;">English</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(card, index) in filteredCards" :key="index">
+                                    <tr>
+                                        <td>
+                                            <div class="swedish-text" x-text="card.swedish"></div>
+                                        </td>
+                                        <td>
+                                            <div class="english-text" x-text="card.english"></div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                        
+                        <!-- No Results -->
+                        <div x-show="filteredCards.length === 0 && searchQuery.trim()" class="no-results">
+                            No cards found matching "<span x-text="searchQuery"></span>"
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="table-stats">
+                        <span x-show="!searchQuery.trim()">
+                            Showing <strong x-text="flashcards.length"></strong> cards
+                        </span>
+                        <span x-show="searchQuery.trim()">
+                            Showing <strong x-text="filteredCards.length"></strong> of <strong x-text="flashcards.length"></strong> cards
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div x-show="!selectedCollection" class="card" style="text-align: center; padding: 3rem;">
+                    <h3 style="color: #a0a0a0; margin-bottom: 1rem;">📚 Select a Collection</h3>
+                    <p style="color: #666;">Choose a collection from the dropdown above to view its contents in a table format.</p>
                 </div>
             </div>
 
