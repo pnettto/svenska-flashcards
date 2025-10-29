@@ -5,7 +5,6 @@ function flashcardApp() {
         gameStarted: false,
         sessionComplete: false,
         flashcardType: 'flip',
-        sessionLength: 10,
 
         // Collections
         collections: {},
@@ -24,11 +23,6 @@ function flashcardApp() {
         correctAnswers: 0,
         incorrectCards: [],
         isReviewMode: false,
-
-        // Input
-        userAnswer: '',
-        answerClass: '',
-        feedbackMessage: '',
 
         // Table view
         searchQuery: '',
@@ -55,6 +49,7 @@ function flashcardApp() {
             'vocabulary-emotions.csv',
             'vocabulary-food.csv',
             'vocabulary-travel.csv',
+            'vocabulary-vardagslivert.csv',
             'vocabulary-verbs.csv',
             'vocabulary-weather.csv',
         ],
@@ -138,9 +133,9 @@ function flashcardApp() {
                 return;
             }
 
-            // Shuffle all cards and take only the session length amount
+            // Always use 10 cards per session
             const shuffledCards = this.shuffleArray(this.flashcards);
-            this.currentCards = shuffledCards.slice(0, parseInt(this.sessionLength));
+            this.currentCards = shuffledCards.slice(0, 10);
             this.currentIndex = 0;
             this.correctAnswers = 0;
             this.incorrectCards = [];
@@ -158,9 +153,6 @@ function flashcardApp() {
             }
 
             this.isFlipped = false;
-            this.userAnswer = '';
-            this.answerClass = '';
-            this.feedbackMessage = '';
 
             if (this.flashcardType === 'typing') {
                 this.$nextTick(() => {
@@ -174,35 +166,20 @@ function flashcardApp() {
         getCurrentCardWord() {
             if (this.currentIndex >= this.currentCards.length) return '';
             const card = this.currentCards[this.currentIndex];
-            return this.flashcardType === 'typing' ? card.english : card.swedish;
+            // Always show Swedish on front
+            return card.swedish;
         },
 
         getCurrentCardTranslation() {
             if (this.currentIndex >= this.currentCards.length) return '';
             const card = this.currentCards[this.currentIndex];
-            return this.flashcardType === 'typing' ? card.swedish : card.english;
+            // Always show English on back
+            return card.english;
         },
 
         flipCard() {
-            if (this.flashcardType !== 'flip' || this.isFlipped) return;
+            if (this.isFlipped) return;
             this.isFlipped = true;
-        },
-
-        checkAnswer() {
-            if (this.flashcardType !== 'typing' || this.isFlipped) return;
-
-            const userAnswer = this.userAnswer.trim().toLowerCase();
-            const correctAnswer = this.currentCards[this.currentIndex].swedish.toLowerCase();
-
-            this.isFlipped = true;
-
-            if (correctAnswer.includes(userAnswer) && userAnswer.length > 0) {
-                this.answerClass = 'correct';
-                this.feedbackMessage = '<div class="correct-answer">✓ Correct!</div>';
-            } else {
-                this.answerClass = 'incorrect';
-                this.feedbackMessage = `<div class="incorrect-answer">✗ Incorrect<br>Correct answer: <strong>${this.currentCards[this.currentIndex].swedish}</strong></div>`;
-            }
         },
 
         markCorrect() {
@@ -501,25 +478,11 @@ document.addEventListener('keydown', function (e) {
     const app = Alpine.$data(document.querySelector('[x-data]'));
     if (!app || !app.gameStarted || app.sessionComplete) return;
 
-    if (document.activeElement.tagName === 'INPUT') {
-        return; // Let Alpine handle Enter key in input
-    }
-
     switch (e.key) {
         case ' ':
             e.preventDefault();
-            if (app.flashcardType === 'flip' && !app.isFlipped) {
+            if (!app.isFlipped) {
                 app.flipCard();
-            } else if (app.flashcardType === 'typing' && !app.isFlipped) {
-                const input = document.querySelector('[x-ref="answerInput"]');
-                if (input) input.focus();
-            }
-            break;
-        case 'Enter':
-            e.preventDefault();
-            if (app.flashcardType === 'typing' && !app.isFlipped) {
-                const input = document.querySelector('[x-ref="answerInput"]');
-                if (input) input.focus();
             }
             break;
         case 'ArrowRight':

@@ -26,10 +26,10 @@
                     Start
                 </button>
                 <button @click="activeTab = 'view'" :class="{ active: activeTab === 'view' }" class="tab">
-                    View set
+                    View
                 </button>
                 <button @click="activeTab = 'create'" :class="{ active: activeTab === 'create' }" class="tab">
-                    Create set
+                    Create
                 </button>
                 <button @click="activeTab = 'config'" :class="{ active: activeTab === 'config' }" class="tab">
                     Config
@@ -68,39 +68,6 @@
                             </p>
                             <textarea x-model="csvData" class="textarea"
                                 placeholder="Paste your CSV data here or select a collection above..."></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Flashcard Type -->
-                    <div class="card">
-                        <div class="input-group">
-                            <label>Choose Flashcard Type</label>
-                            <div class="radio-group">
-                                <div @click="flashcardType = 'flip'" :class="{ active: flashcardType === 'flip' }"
-                                    class="radio-item">
-                                    <div class="radio-dot"></div>
-                                    <span>Flip Mode (press space to see answer, arrows to choose right or wrong)</span>
-                                </div>
-                                <div @click="flashcardType = 'typing'" :class="{ active: flashcardType === 'typing' }"
-                                    class="radio-item">
-                                    <div class="radio-dot"></div>
-                                    <span>Typing Mode (type Swedish translation)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Session Length -->
-                    <div class="card">
-                        <div class="input-group">
-                            <label>Session Length</label>
-                            <select x-model="sessionLength" class="select">
-                                <option value="10">10 cards</option>
-                                <option value="15">15 cards</option>
-                                <option value="20">20 cards</option>
-                                <option value="25">25 cards</option>
-                                <option value="30">30 cards</option>
-                            </select>
                         </div>
                     </div>
                 </div>
@@ -239,57 +206,38 @@
         <!-- Game Section -->
         <div x-show="gameStarted && !sessionComplete" class="section">
             <!-- Stats -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number" style="color: #667eea;" x-text="currentCards.length">0</div>
-                    <div class="stat-label">Total</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" style="color: #764ba2;"
-                        x-text="Math.min(currentIndex + 1, currentCards.length)">0
-                    </div>
-                    <div class="stat-label">Current</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" style="color: #10b981;" x-text="correctAnswers">0</div>
-                    <div class="stat-label">Correct</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" style="color: #ef4444;" x-text="incorrectCards.length">0</div>
-                    <div class="stat-label">Errors</div>
-                </div>
+            <div class="stats-compact-card">
+                <span style="color:#667eea; font-weight:600; font-size:1.2rem;" x-text="currentCards.length"></span>
+                <span style="color:#888; font-size:0.9rem;">Total</span>
+                <span style="margin:0 0.5em; color:#444;">|</span>
+                <span style="color:#764ba2; font-weight:600; font-size:1.2rem;" x-text="Math.min(currentIndex + 1, currentCards.length)"></span>
+                <span style="color:#888; font-size:0.9rem;">Current</span>
+                <span style="margin:0 0.5em; color:#444;">|</span>
+                <span style="color:#10b981; font-weight:600; font-size:1.2rem;" x-text="correctAnswers"></span>
+                <span style="color:#888; font-size:0.9rem;">Correct</span>
+                <span style="margin:0 0.5em; color:#444;">|</span>
+                <span style="color:#ef4444; font-weight:600; font-size:1.2rem;" x-text="incorrectCards.length"></span>
+                <span style="color:#888; font-size:0.9rem;">Errors</span>
             </div>
 
             <!-- Flashcard -->
             <div class="flashcard" :class="{ flipped: isFlipped }"
-                @click="flashcardType === 'flip' ? flipCard() : null">
+                @click="isFlipped ? markCorrect() : flipCard()">
                 <div style="margin-bottom: 0.75rem;">
                     <button @click.stop="speakCurrentSwedish()" :disabled="!speechEnabled()" class="btn btn-secondary">
                         🔈
                     </button>
                 </div>
 
-                <!-- Call the method instead of binding the function -->
                 <div class="flashcard-word" x-text="getCurrentCardWord()"></div>
 
-                <div x-show="isFlipped && flashcardType === 'flip'" class="flashcard-translation"
+                <div x-show="isFlipped" class="flashcard-translation"
                     x-text="getCurrentCardTranslation()"></div>
-
-                <div x-show="flashcardType === 'typing'">
-                    <input type="text" x-model="userAnswer" :class="answerClass" :disabled="isFlipped"
-                        @keydown.enter="!isFlipped ? checkAnswer() : null" x-ref="answerInput" class="answer-input"
-                        placeholder="Type the Swedish translation..." />
-                    <div x-html="feedbackMessage" class="feedback"></div>
-                </div>
             </div>
 
             <!-- Buttons -->
             <div class="buttons">
-                <button @click="checkAnswer()" x-show="flashcardType === 'typing' && !isFlipped"
-                    class="btn btn-primary">
-                    Check Answer
-                </button>
-                <button @click="flipCard()" x-show="flashcardType === 'flip' && !isFlipped" class="btn btn-primary">
+                <button @click="flipCard()" x-show="!isFlipped" class="btn btn-primary">
                     Show Answer
                 </button>
                 <button @click="markCorrect()" x-show="isFlipped" class="btn btn-success">
