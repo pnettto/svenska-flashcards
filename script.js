@@ -245,16 +245,23 @@ function flashcardApp() {
             }
         },
 
-        initializeAzureSpeech() {
+        async initializeAzureSpeech() {
             try {
                 if (!this.speechKey || !this.speechRegion) return;
-                
+                // Ensure SDK is loaded before using SpeechSDK
+                if (!window.SpeechSDK) {
+                    await this.ensureAzureSDKLoaded();
+                }
+                if (!window.SpeechSDK) {
+                    console.error('Azure Speech SDK not loaded');
+                    this.azureSynthesizer = null;
+                    return;
+                }
                 const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
                     this.speechKey,
                     this.speechRegion
                 );
                 speechConfig.speechSynthesisVoiceName = 'sv-SE-SofieNeural';
-                
                 this.azureSynthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
                 console.log('Azure Speech SDK initialized successfully');
             } catch (error) {
