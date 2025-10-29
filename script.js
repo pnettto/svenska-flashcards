@@ -414,6 +414,28 @@ function flashcardApp() {
             }
         },
 
+        speakSwedish(text) {
+            if (!text) return;
+            // Try Azure first if available
+            if (this.azureSynthesizer) {
+                this.azureSynthesizer.speakTextAsync(
+                    text,
+                    result => {
+                        if (result.reason === SpeechSDK.ResultReason.SynthesizingAudioCompleted) {
+                            // success
+                        } else {
+                            this.speakWithBrowser(text);
+                        }
+                    },
+                    error => {
+                        this.speakWithBrowser(text);
+                    }
+                );
+            } else {
+                this.speakWithBrowser(text);
+            }
+        },
+
         speakWithBrowser(text) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
