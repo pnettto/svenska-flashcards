@@ -438,11 +438,18 @@ function flashcardApp() {
 
         speakWithBrowser(text) {
             if ('speechSynthesis' in window) {
+                // Abort all ongoing audio (including other tabs/windows if possible)
                 window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'sv-SE';
-                utterance.rate = 0.9;
-                window.speechSynthesis.speak(utterance);
+                // Small timeout to ensure previous audio is stopped before starting new one
+                setTimeout(() => {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'sv-SE';
+                    utterance.rate = 0.9;
+                    // Defensive: clear any queued utterances on end/error
+                    utterance.onend = () => window.speechSynthesis.cancel();
+                    utterance.onerror = () => window.speechSynthesis.cancel();
+                    window.speechSynthesis.speak(utterance);
+                }, 50);
             }
         },
 
